@@ -4,6 +4,8 @@ from aiogram import Bot, Dispatcher, types
 from aiogram.filters import Command
 from dotenv import load_dotenv
 from db import init_db, add_user
+from aiogram import F
+from db import activate_plan
 
 load_dotenv()
 TOKEN = os.getenv('BOT_TOKEN')
@@ -36,6 +38,52 @@ async def start_command(message: types.Message):
     await message.answer(
         "Выберите подписку:",
         reply_markup=keyboard,
+    )
+
+
+@dp.callback_query(F.data.startswith("buy_"))
+async def choose_plan(callback: types.CallbackQuery):
+    plan = callback.data.split("_")[1]
+
+    keyboard = types.InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                types.InlineKeyboardButton(
+                    text="Оплатить",
+                    callback_data=f"pay_{plan}"
+                )
+            ]
+        ]
+    )
+
+    await callback.message.edit_text(
+        f"Вы выбрали подписку: {plan}\nНажмите оплатить.",
+        reply_markup=keyboard
+    )
+
+@dp.callback_query(F.data.startswith("pay_"))
+async def fake_payment(callback: types.CallbackQuery):
+    plan = callback.data.split("_")[1]
+    user_id = callback.from_user.id
+
+    await activate_plan(user_id, plan)
+
+    link = f"https://example.com/open?user_id={user_id}&plan={plan}"
+
+    keyboard = types.InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                types.InlineKeyboardButton(
+                    text="Открыть приложение",
+                    url=link
+                )
+            ]
+        ]
+    )
+
+    await callback.message.edit_text(
+        "Оплата прошла успешно!",
+        reply_markup=keyboard
     )
 
 
