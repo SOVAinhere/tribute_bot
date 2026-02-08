@@ -33,3 +33,16 @@ async def start_command(message: types.Message):
             ],
         ]
     )
+    await message.answer(
+        "Выберите подписку:",
+        reply_markup=keyboard,
+    )
+
+
+async def main():
+    await init_db()
+    await dp.start_polling(bot)
+
+
+if __name__ == "__main__":
+    asyncio.run(main())
