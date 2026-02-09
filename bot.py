@@ -13,6 +13,12 @@ TOKEN = os.getenv('BOT_TOKEN')
 bot = Bot(TOKEN)
 dp = Dispatcher()
 
+PLAN_TEXT = {
+    "week": "на неделю",
+    "month": "на месяц",
+    "year": "на год"
+}
+
 
 @dp.message(Command('start'))
 async def start_command(message: types.Message):
@@ -21,6 +27,11 @@ async def start_command(message: types.Message):
 
     keyboard = types.InlineKeyboardMarkup(
         inline_keyboard=[
+            [
+                types.InlineKeyboardButton(
+                    text="Подписка на неделю",
+                    callback_data="buy_week")
+            ],
             [
                 types.InlineKeyboardButton(
                     text="Подписка на месяц",
@@ -57,9 +68,10 @@ async def choose_plan(callback: types.CallbackQuery):
     )
 
     await callback.message.edit_text(
-        f"Вы выбрали подписку: {plan}\nНажмите оплатить.",
+        f"Вы выбрали подписку {PLAN_TEXT[plan]}\nНажмите оплатить.",
         reply_markup=keyboard
     )
+
 
 @dp.callback_query(F.data.startswith("pay_"))
 async def fake_payment(callback: types.CallbackQuery):
