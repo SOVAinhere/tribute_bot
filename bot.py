@@ -6,6 +6,8 @@ from dotenv import load_dotenv
 from db import init_db, add_user
 from aiogram import F
 from db import activate_plan
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
+from db import get_active_users
 
 load_dotenv()
 TOKEN = os.getenv('BOT_TOKEN')
@@ -99,8 +101,40 @@ async def fake_payment(callback: types.CallbackQuery):
     )
 
 
+async def send_subscription_notifications():
+    users = await get_active_users()
+    for user_id, plan in users:
+        link = f"https://example.com/open?user_id={user_id}&plan={plan}"
+        keyboard = types.InlineKeyboardMarkup(
+            inline_keyboard=[
+                [
+                    types.InlineKeyboardButton(
+                        text="Открыть приложение",
+                        url=link
+                    )
+                ]
+            ]
+        )
+
+        try:
+            await bot.send_message(
+                user_id,
+                "Ваша подписка активна",
+                reply_markup=keyboard
+            )
+        except:
+            pass
+
+
 async def main():
     await init_db()
+    scheduler = AsyncIOScheduler()
+    scheduler.add_job(
+        send_subscription_notifications,
+        "interval",
+        minutes=1
+    )
+    scheduler.start()
     await dp.start_polling(bot)
 
 

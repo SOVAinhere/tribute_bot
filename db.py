@@ -42,3 +42,19 @@ async def activate_plan(user_id: int, plan: str):
             (plan, until.isoformat(), user_id)
         )
         await db.commit()
+
+async def get_active_users():
+    async with aiosqlite.connect(DB_NAME) as db:
+        cursor = await db.execute(
+            "SELECT user_id, plan, subscription_until FROM users"
+        )
+        rows = await cursor.fetchall()
+        active_users = []
+        now = datetime.now()
+        for user_id, plan, until in rows:
+            if until:
+                until_date = datetime.fromisoformat(until)
+                if until_date > now:
+                    active_users.append((user_id, plan))
+        return active_users
+
