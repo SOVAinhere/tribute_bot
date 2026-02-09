@@ -76,27 +76,29 @@ async def choose_plan(callback: types.CallbackQuery):
 
 
 @dp.callback_query(F.data.startswith("pay_"))
-async def fake_payment(callback: types.CallbackQuery):
+async def pay(callback: types.CallbackQuery):
     plan = callback.data.split("_")[1]
     user_id = callback.from_user.id
 
-    await activate_plan(user_id, plan)
-
-    link = f"https://example.com/open?user_id={user_id}&plan={plan}"
+    # ссылка на оплату (пример)
+    payment_link = (
+        f"https://tribute.example/pay?"
+        f"user_id={user_id}&plan={plan}"
+    )
 
     keyboard = types.InlineKeyboardMarkup(
         inline_keyboard=[
             [
                 types.InlineKeyboardButton(
-                    text="Открыть приложение",
-                    url=link
+                    text="Перейти к оплате",
+                    url=payment_link
                 )
             ]
         ]
     )
 
     await callback.message.edit_text(
-        "Оплата прошла успешно!",
+        "Нажмите кнопку ниже для оплаты:",
         reply_markup=keyboard
     )
 
