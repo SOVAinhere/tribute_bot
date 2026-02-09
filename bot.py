@@ -11,14 +11,16 @@ from db import get_active_users
 
 load_dotenv()
 TOKEN = os.getenv('BOT_TOKEN')
-
+WEEK_LINK = os.getenv("TRIBUTE_WEEK_LINK")
+MONTH_LINK = os.getenv("TRIBUTE_MONTH_LINK")
+YEAR_LINK = os.getenv("TRIBUTE_YEAR_LINK")
 bot = Bot(TOKEN)
 dp = Dispatcher()
 
-PLAN_TEXT = {
-    "week": "на неделю",
-    "month": "на месяц",
-    "year": "на год"
+PAYMENT_LINKS = {
+    "week": WEEK_LINK,
+    "month": MONTH_LINK,
+    "year": YEAR_LINK,
 }
 
 
@@ -70,7 +72,7 @@ async def choose_plan(callback: types.CallbackQuery):
     )
 
     await callback.message.edit_text(
-        f"Вы выбрали подписку {PLAN_TEXT[plan]}\nНажмите оплатить.",
+        f"Вы выбрали подписку {PAYMENT_LINKS[plan]}\nНажмите оплатить.",
         reply_markup=keyboard
     )
 
@@ -78,13 +80,8 @@ async def choose_plan(callback: types.CallbackQuery):
 @dp.callback_query(F.data.startswith("pay_"))
 async def pay(callback: types.CallbackQuery):
     plan = callback.data.split("_")[1]
-    user_id = callback.from_user.id
 
-    # ссылка на оплату (пример)
-    payment_link = (
-        f"https://tribute.example/pay?"
-        f"user_id={user_id}&plan={plan}"
-    )
+    payment_link = PAYMENT_LINKS[plan]
 
     keyboard = types.InlineKeyboardMarkup(
         inline_keyboard=[
@@ -103,11 +100,13 @@ async def pay(callback: types.CallbackQuery):
     )
 
 
+
+
 async def send_subscription_notifications():
-    print("Проверка подписок...")  # ← добавь это
+    print("Проверка подписок...")
 
     users = await get_active_users()
-    print("Активные пользователи:", users)  # ← и это
+    print("Активные пользователи:", users)
 
     for user_id, plan in users:
         link = f"https://example.com/open?user_id={user_id}&plan={plan}"
@@ -138,8 +137,7 @@ async def main():
     scheduler = AsyncIOScheduler()
     scheduler.add_job(
         send_subscription_notifications,
-        "interval",
-        minutes=1
+        "interval", hours=24
     )
     scheduler.start()
     await dp.start_polling(bot)

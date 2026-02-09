@@ -5,7 +5,7 @@ app = FastAPI()
 
 
 @app.post("/webhook/tribute")
-async def webhook_tribute(request: Request):
+async def tribute_webhook(request: Request):
     data = await request.json()
     print("Webhook data:", data)
 
@@ -13,6 +13,6 @@ async def webhook_tribute(request: Request):
     plan = data.get("plan")
 
     if user_id and plan:
-        await activate_plan(int(user_id), plan)
+        await activate_plan(user_id, plan)
 
-    return {"status": "ok"}
+    return {"ok": True}
