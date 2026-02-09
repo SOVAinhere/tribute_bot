@@ -29,6 +29,9 @@ async def activate_plan(user_id: int, plan: str):
         until = datetime.now() + timedelta(days=30)
     elif plan == "year":
         until = datetime.now() + timedelta(days=365)
+    elif plan == "week":
+        until = datetime.now() + timedelta(days=7)
+
     else:
         return
 
@@ -42,6 +45,7 @@ async def activate_plan(user_id: int, plan: str):
             (plan, until.isoformat(), user_id)
         )
         await db.commit()
+
 
 async def get_active_users():
     async with aiosqlite.connect(DB_NAME) as db:
@@ -57,4 +61,3 @@ async def get_active_users():
                 if until_date > now:
                     active_users.append((user_id, plan))
         return active_users
-

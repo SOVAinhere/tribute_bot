@@ -102,9 +102,14 @@ async def fake_payment(callback: types.CallbackQuery):
 
 
 async def send_subscription_notifications():
+    print("Проверка подписок...")  # ← добавь это
+
     users = await get_active_users()
+    print("Активные пользователи:", users)  # ← и это
+
     for user_id, plan in users:
         link = f"https://example.com/open?user_id={user_id}&plan={plan}"
+
         keyboard = types.InlineKeyboardMarkup(
             inline_keyboard=[
                 [
@@ -122,8 +127,8 @@ async def send_subscription_notifications():
                 "Ваша подписка активна",
                 reply_markup=keyboard
             )
-        except:
-            pass
+        except Exception as e:
+            print("Ошибка отправки:", e)
 
 
 async def main():
