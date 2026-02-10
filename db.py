@@ -17,6 +17,25 @@ async def init_db():
         await db.commit()
 
 
+async def get_user_subscription(user_id: int):
+    async with aiosqlite.connect(DB_NAME) as db:
+        cursor = await db.execute(
+            "SELECT plan, subscription_until FROM users WHERE user_id = ?",
+            (user_id,)
+        )
+        row = await cursor.fetchone()
+
+        if not row:
+            return None
+
+        plan, until = row
+        if until:
+            until_date = datetime.fromisoformat(until)
+            if until_date > datetime.now():
+                return plan, until_date
+
+        return None
+
 async def add_user(user_id: int):
     async with aiosqlite.connect(DB_NAME) as db:
         await db.execute("INSERT OR IGNORE INTO users (user_id) VALUES (?)",
@@ -31,11 +50,17 @@ async def activate_plan(user_id: int, plan: str):
         until = datetime.now() + timedelta(days=365)
     elif plan == "week":
         until = datetime.now() + timedelta(days=7)
-
     else:
         return
 
     async with aiosqlite.connect(DB_NAME) as db:
+        # создаём пользователя, если его нет
+        await db.execute(
+            "INSERT OR IGNORE INTO users (user_id) VALUES (?)",
+            (user_id,)
+        )
+
+        # активируем подписку
         await db.execute(
             """
             UPDATE users
@@ -45,6 +70,7 @@ async def activate_plan(user_id: int, plan: str):
             (plan, until.isoformat(), user_id)
         )
         await db.commit()
+
 
 
 async def get_active_users():

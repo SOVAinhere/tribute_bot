@@ -8,6 +8,7 @@ from aiogram import F
 from db import activate_plan
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from db import get_active_users
+from db import get_user_subscription
 
 load_dotenv()
 TOKEN = os.getenv('BOT_TOKEN')
@@ -29,6 +30,33 @@ async def start_command(message: types.Message):
     user_id = message.from_user.id
     await add_user(user_id)
 
+    subscription = await get_user_subscription(user_id)
+
+    # если подписка активна
+    if subscription:
+        plan, until = subscription
+        until_str = until.strftime("%d.%m.%Y") # добавил для формата даты по РФ
+
+        link = f"https://example.com/open?user_id={user_id}&plan={plan}"
+
+        keyboard = types.InlineKeyboardMarkup(
+            inline_keyboard=[
+                [
+                    types.InlineKeyboardButton(
+                        text="Открыть приложение",
+                        url=link
+                    )
+                ]
+            ]
+        )
+
+        await message.answer(
+            f"Ваша подписка активна до {until_str} ❤️",
+            reply_markup=keyboard
+        )
+        return
+
+    # если подписки нет
     keyboard = types.InlineKeyboardMarkup(
         inline_keyboard=[
             [
@@ -50,10 +78,12 @@ async def start_command(message: types.Message):
             ],
         ]
     )
+
     await message.answer(
         "Выберите подписку:",
         reply_markup=keyboard,
     )
+
 
 
 @dp.callback_query(F.data.startswith("buy_"))
@@ -72,7 +102,7 @@ async def choose_plan(callback: types.CallbackQuery):
     )
 
     await callback.message.edit_text(
-        f"Вы выбрали подписку {PAYMENT_LINKS[plan]}\nНажмите оплатить.",
+        f"Вы выбрали подписку.\nНажмите оплатить.",
         reply_markup=keyboard
     )
 
@@ -98,8 +128,6 @@ async def pay(callback: types.CallbackQuery):
         "Нажмите кнопку ниже для оплаты:",
         reply_markup=keyboard
     )
-
-
 
 
 async def send_subscription_notifications():
