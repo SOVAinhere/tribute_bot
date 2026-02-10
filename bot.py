@@ -9,6 +9,7 @@ from db import activate_plan
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from db import get_active_users
 from db import get_user_subscription
+from db import get_users_expiring_soon
 
 load_dotenv()
 TOKEN = os.getenv('BOT_TOKEN')
@@ -35,7 +36,7 @@ async def start_command(message: types.Message):
     # если подписка активна
     if subscription:
         plan, until = subscription
-        until_str = until.strftime("%d.%m.%Y") # добавил для формата даты по РФ
+        until_str = until.strftime("%d.%m.%Y")  # добавил для формата даты по РФ
 
         link = f"https://example.com/open?user_id={user_id}&plan={plan}"
 
@@ -83,7 +84,6 @@ async def start_command(message: types.Message):
         "Выберите подписку:",
         reply_markup=keyboard,
     )
-
 
 
 @dp.callback_query(F.data.startswith("buy_"))
@@ -138,7 +138,6 @@ async def send_subscription_notifications():
 
     for user_id, plan in users:
         link = f"https://example.com/open?user_id={user_id}&plan={plan}"
-
         keyboard = types.InlineKeyboardMarkup(
             inline_keyboard=[
                 [
@@ -160,11 +159,45 @@ async def send_subscription_notifications():
             print("Ошибка отправки:", e)
 
 
+async def send_expiring_notifications():
+    print("Проверка истекающих подписок...")
+
+    users = await get_users_expiring_soon()
+    print("Скоро истекают:", users)
+
+    for user_id, plan, until in users:
+        until_str = until.strftime("%d.%m.%Y")
+
+        keyboard = types.InlineKeyboardMarkup(
+            inline_keyboard=[
+                [
+                    types.InlineKeyboardButton(
+                        text="Продлить подписку",
+                        callback_data=f"buy_{plan}"
+                    )
+                ]
+            ]
+        )
+
+        try:
+            await bot.send_message(
+                user_id,
+                f"Подписка заканчивается {until_str}.\nПродлите её, чтобы не потерять доступ.",
+                reply_markup=keyboard
+            )
+        except Exception as e:
+            print("Ошибка отправки:", e)
+
+
 async def main():
     await init_db()
     scheduler = AsyncIOScheduler()
     scheduler.add_job(
         send_subscription_notifications,
+        "interval", hours=24
+    )
+    scheduler.add_job(
+        send_expiring_notifications,
         "interval", hours=24
     )
     scheduler.start()

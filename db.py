@@ -87,3 +87,24 @@ async def get_active_users():
                 if until_date > now:
                     active_users.append((user_id, plan))
         return active_users
+
+async def get_users_expiring_soon():
+    async with aiosqlite.connect(DB_NAME) as db:
+        cursor = await db.execute(
+            "SELECT user_id, plan, subscription_until FROM users"
+        )
+        rows = await cursor.fetchall()
+
+        soon_users = []
+        now = datetime.now()
+
+        for user_id, plan, until in rows:
+            if until:
+                until_date = datetime.fromisoformat(until)
+                delta = until_date - now
+
+                # если осталось меньше суток, но подписка ещё активна
+                if timedelta(hours=0) < delta <= timedelta(days=1):
+                    soon_users.append((user_id, plan, until_date))
+
+        return soon_users
