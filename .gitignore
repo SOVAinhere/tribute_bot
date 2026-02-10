@@ -43,7 +43,6 @@ $RECYCLE.BIN/
 *.msp
 *.lnk
 
-# Linux
 *~
 .fuse_hidden*
 .directory
